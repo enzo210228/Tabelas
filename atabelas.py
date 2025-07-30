@@ -687,87 +687,68 @@ def formatar_excel_tabelas_alm(df_ntnb, dados_fundos_por_indexador, usar_autofit
     return output
 
 def ler_arquivo_excel(uploaded_file):
-    """Função otimizada para Streamlit Cloud - ignora estilos problemáticos"""
+    """Função com múltiplas engines para máxima compatibilidade"""
     try:
         uploaded_file.seek(0)
         st.info(f"🔄 Processando: {uploaded_file.name}")
         
-        # MÉTODO ESPECÍFICO PARA STREAMLIT CLOUD
+        # MÉTODO 1: Tentar com calamine (engine mais robusta)
         try:
-            from openpyxl import load_workbook
-            from openpyxl.reader.excel import load_workbook as load_wb_reader
-            import warnings
-            
-            # Suprimir warnings de estilo
-            warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
-            
-            # Tentar com configurações ultra-seguras
-            workbook = load_workbook(
-                uploaded_file,
-                read_only=True,         # Modo somente leitura
-                keep_vba=False,         # Sem VBA
-                data_only=True,         # Apenas dados (sem fórmulas)
-                keep_links=False        # Sem links
+            df = pd.read_excel(
+                uploaded_file, 
+                header=None, 
+                engine='calamine'
             )
-            
-            worksheet = workbook.active
-            
-            # Buscar área com dados (evitar células vazias)
-            max_row = worksheet.max_row
-            max_col = worksheet.max_column
-            
-            st.info(f"📊 Área detectada: {max_row} linhas x {max_col} colunas")
-            
-            # Extrair dados célula por célula (mais seguro)
-            data = []
-            for row_num in range(1, max_row + 1):
-                row_data = []
-                for col_num in range(1, max_col + 1):
-                    try:
-                        cell = worksheet.cell(row=row_num, column=col_num)
-                        # Apenas o valor, ignorando completamente formatação
-                        value = cell.value
-                        if value is None:
-                            row_data.append("")
-                        else:
-                            row_data.append(str(value).strip())
-                    except:
-                        row_data.append("")
-                data.append(row_data)
-            
-            workbook.close()
-            
-            # Filtrar linhas completamente vazias
-            data_filtrada = []
-            for row in data:
-                if any(cell.strip() for cell in row if cell):
-                    data_filtrada.append(row)
-            
-            if not data_filtrada:
-                st.error("❌ Nenhum dado encontrado no arquivo")
-                return None
-            
-            df = pd.DataFrame(data_filtrada)
-            st.success(f"✅ {len(df)} linhas x {len(df.columns)} colunas processadas")
-            
+            st.success(f"✅ Sucesso com calamine: {len(df)} linhas")
             return df
+        except:
+            uploaded_file.seek(0)
+        
+        # MÉTODO 2: Tentar com xlrd
+        try:
+            df = pd.read_excel(
+                uploaded_file, 
+                header=None, 
+                engine='xlrd'
+            )
+            st.success(f"✅ Sucesso com xlrd: {len(df)} linhas")
+            return df
+        except:
+            uploaded_file.seek(0)
+        
+        # MÉTODO 3: Tentar salvar como bytes e recarregar
+        try:
+            import io
+            
+            # Ler como bytes
+            file_bytes = uploaded_file.read()
+            bytes_io = io.BytesIO(file_bytes)
+            
+            # Tentar pandas sem especificar engine
+            df = pd.read_excel(bytes_io, header=None)
+            st.success(f"✅ Sucesso com bytes: {len(df)} linhas")
+            return df
+        except:
+            pass
+        
+        # MÉTODO 4: Conversão via CSV (último recurso)
+        try:
+            uploaded_file.seek(0)
+            
+            # Tentar converter para CSV primeiro
+            temp_df = pd.read_excel(uploaded_file, header=None, engine=None)
+            
+            # Se chegou aqui, funcionou
+            st.success(f"✅ Sucesso engine padrão: {len(temp_df)} linhas")
+            return temp_df
             
         except Exception as e:
-            st.error(f"❌ Erro openpyxl: {str(e)}")
-            
-            # FALLBACK: Tentar pandas direto ignorando erros
-            try:
-                uploaded_file.seek(0)
-                df = pd.read_excel(
-                    uploaded_file, 
-                    header=None, 
-                    engine='openpyxl'
-                )
-                st.success(f"✅ Fallback funcionou: {len(df)} linhas")
-                return df
-            except Exception as e2:
-                st.error(f"❌ Fallback também falhou: {str(e2)}")
-                return None
+            st.error(f"❌ Todos os métodos falharam")
+            st.error("🔧 **Solução:** Converter o arquivo para CSV")
+            st.info("1. Abra o arquivo no Excel")
+            st.info("2. Salvar Como → CSV (UTF-8)")
+            st.info("3. Use o arquivo CSV gerado")
+            return None
         
     except Exception as e:
         st.error(f"❌ Erro geral: {str(e)}")
