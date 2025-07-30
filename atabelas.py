@@ -3,6 +3,14 @@ import pandas as pd
 import re
 from collections import defaultdict
 import io
+import os
+import platform
+
+# Detectar se está no Streamlit Cloud
+IS_STREAMLIT_CLOUD = (
+    os.getenv("STREAMLIT_SHARING_MODE") == "true" or 
+    "streamlit" in os.getcwd().lower() or
+    platform.system() == "Linu
 
 # BASE DE DADOS: Mapeamento Ativo ALM → Indexador
 BASE_DADOS_ALM = {
@@ -562,8 +570,10 @@ def formatar_excel_tabelas_alm(df_ntnb, dados_fundos_por_indexador, usar_autofit
     output = io.BytesIO()
     
     # Tentar usar xlwings se solicitado
-    if usar_autofit:
+    if usar_autofit and not IS_STREAMLIT_CLOUD:
         try:
+            if IS_STREAMLIT_CLOUD:
+                raise ImportError("xlwings desabilitado no Streamlit Cloud")
             import xlwings as xw
             import tempfile
             import os
