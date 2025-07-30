@@ -687,25 +687,24 @@ def formatar_excel_tabelas_alm(df_ntnb, dados_fundos_por_indexador, usar_autofit
     return output
 
 def ler_arquivo_excel(uploaded_file):
-    """Função ultra-robusta para arquivos Excel dinâmicos"""
+    """Função simplificada para Streamlit Cloud"""
     try:
         uploaded_file.seek(0)
-        file_name = uploaded_file.name
-        st.info(f"🔄 Processando: {file_name}")
+        st.info(f"🔄 Processando: {uploaded_file.name}")
         
-        # MÉTODO 1: openpyxl apenas dados (ignora formatação)
-        try:
-            df = pd.read_excel(
-                uploaded_file, 
-                header=None, 
-                engine='openpyxl',
-                keep_default_na=False,
-                na_values=[],
-                dtype=str  # Tudo como string para evitar erros de tipo
-            )
-            
-        except:
-            uploaded_file.seek(0)
+        # Método único e simples para Streamlit Cloud
+        df = pd.read_excel(
+            uploaded_file, 
+            header=None, 
+            engine='openpyxl'
+        )
+        
+        return df
+        
+    except Exception as e:
+        st.error(f"❌ Erro ao ler arquivo: {str(e)}")
+        st.error("💡 Dica: Tente salvar o arquivo Excel como uma nova cópia")
+        return None
         
         # MÉTODO 2: openpyxl com workbook manual
         try:
