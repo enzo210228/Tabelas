@@ -376,7 +376,9 @@ def processar_fundos_por_indexador_v2(df_posicoes, alm_fundos, saldo_total):
             'IBRX 50': 'IBOVESPA',
             'IMA-GERAL TOTAL': 'IMA-B',
             'IRF-M TOTAL':'IRF-M',
-            'IMA-B 5+':'IMA-B'
+            'IMA-B 5+':'IMA-B',
+            'SMALL CAP':'IBOVESPA',
+            'IDKA 2':'IMA-B',
         }
         
         def padronizar_indexador(indexador_original, artigo=""):
