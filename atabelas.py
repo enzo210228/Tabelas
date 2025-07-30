@@ -10,7 +10,8 @@ import platform
 IS_STREAMLIT_CLOUD = (
     os.getenv("STREAMLIT_SHARING_MODE") == "true" or 
     "streamlit" in os.getcwd().lower() or
-    platform.system() == "Linu
+    platform.system() == "Linux"
+)
 
 # BASE DE DADOS: Mapeamento Ativo ALM → Indexador
 BASE_DADOS_ALM = {
