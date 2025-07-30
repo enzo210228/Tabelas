@@ -687,42 +687,43 @@ def formatar_excel_tabelas_alm(df_ntnb, dados_fundos_por_indexador, usar_autofit
     return output
 
 def ler_arquivo_excel(uploaded_file):
-    """Função simplificada para Streamlit Cloud"""
+    """Função ultra-robusta para Streamlit Cloud"""
     try:
         uploaded_file.seek(0)
         st.info(f"🔄 Processando: {uploaded_file.name}")
         
-        # Método único e simples para Streamlit Cloud
-        df = pd.read_excel(
-            uploaded_file, 
-            header=None, 
-            engine='openpyxl'
-        )
+        # MÉTODO 1: Tentar com configurações mais tolerantes
+        try:
+            df = pd.read_excel(
+                uploaded_file, 
+                header=None, 
+                engine='openpyxl',
+                keep_default_na=False,  # Não converter valores em NaN
+                na_values=[],           # Lista vazia de valores NaN
+                dtype=str               # Forçar tudo como string
+            )
+            return df
+        except Exception as e1:
+            st.warning(f"Método 1 falhou: {str(e1)[:50]}...")
+            uploaded_file.seek(0)
         
-        return df
-        
-    except Exception as e:
-        st.error(f"❌ Erro ao ler arquivo: {str(e)}")
-        st.error("💡 Dica: Tente salvar o arquivo Excel como uma nova cópia")
-        return None
-        
-        # MÉTODO 2: openpyxl com workbook manual
+        # MÉTODO 2: Usar openpyxl diretamente
         try:
             from openpyxl import load_workbook
-            from openpyxl.utils.exceptions import InvalidFileException
             
-            # Carregar apenas valores, sem formatação
+            # Carregar workbook com configurações mais tolerantes
             workbook = load_workbook(
-                uploaded_file, 
-                data_only=True,     # Apenas dados
-                read_only=True,     # Modo somente leitura
-                keep_vba=False,     # Ignorar VBA
-                keep_links=False    # Ignorar links
+                uploaded_file,
+                read_only=True,         # Modo somente leitura
+                keep_vba=False,         # Ignorar VBA
+                data_only=True,         # Apenas dados (sem fórmulas)
+                keep_links=False        # Ignorar links externos
             )
             
+            # Pegar a primeira planilha
             worksheet = workbook.active
             
-            # Extrair todos os dados como matriz
+            # Extrair dados como lista de listas
             data = []
             for row in worksheet.iter_rows(values_only=True):
                 # Converter None para string vazia
@@ -731,85 +732,32 @@ def ler_arquivo_excel(uploaded_file):
             
             workbook.close()
             
-        
-                
-        except Exception as e:
-            st.warning(f"openpyxl manual falhou: {str(e)[:50]}...")
-            uploaded_file.seek(0)
-        
-        # MÉTODO 3: Converter para CSV em memória e ler
-        try:
-            import tempfile
-            import os
-            
-            # Salvar temporariamente
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
-                tmp.write(uploaded_file.read())
-                tmp_path = tmp.name
-            
-            # Tentar ler o arquivo temporário
-            df = pd.read_excel(tmp_path, header=None, engine='openpyxl')
-            
-            # Limpar arquivo temporário
-            os.unlink(tmp_path)
-            
+            # Converter para DataFrame
+            df = pd.DataFrame(data)
             return df
             
-        except Exception as e:
+        except Exception as e2:
+            st.warning(f"Método 2 falhou: {str(e2)[:50]}...")
             uploaded_file.seek(0)
         
-        # MÉTODO 4: xlwings (se disponível)
+        # MÉTODO 3: Fallback com pandas puro
         try:
-            import xlwings as xw
-            import tempfile
-            import os
-            
-            # Salvar arquivo temporário
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
-                tmp.write(uploaded_file.read())
-                tmp_path = tmp.name
-            
-            # Usar Excel real para ler
-            app = xw.App(visible=False, add_book=False)
-            wb = app.books.open(tmp_path)
-            ws = wb.sheets[0]
-            
-            # Encontrar área com dados
-            used_range = ws.used_range
-            if used_range:
-                data = used_range.value
-                
-                # Converter para DataFrame
-                if isinstance(data[0], list):
-                    df = pd.DataFrame(data)
-                else:
-                    df = pd.DataFrame([data])
-                
-                wb.close()
-                app.quit()
-                os.unlink(tmp_path)
-                
-                return df
-            
-        except Exception as e:
-            st.warning(f"xlwings falhou: {str(e)[:50]}...")
-        
-        # MÉTODO 5: Última tentativa - pandas puro
-        try:
-            uploaded_file.seek(0)
-            df = pd.read_excel(uploaded_file, header=None)
+            df = pd.read_excel(uploaded_file, header=None, engine='openpyxl')
             return df
-        except Exception as e:
-            st.warning(f"pandas puro falhou: {str(e)[:50]}...")
+        except Exception as e3:
+            st.warning(f"Método 3 falhou: {str(e3)[:50]}...")
         
-        # Se tudo falhou
-        st.error("❌ Não foi possível ler o arquivo com nenhum método disponível")
-        st.error("💡 Dica: Tente salvar o arquivo Excel como uma nova cópia sem formatação")
+        # Se todos falharam
+        st.error("❌ Não foi possível ler o arquivo Excel")
+        st.error("💡 Sugestões:")
+        st.error("   • Abra o arquivo no Excel e salve como nova cópia")
+        st.error("   • Remova formatações complexas, gráficos ou macros")
+        st.error("   • Tente salvar como .xlsx (não .xls)")
         
         return None
         
     except Exception as e:
-        st.error(f"Erro geral na leitura: {str(e)}")
+        st.error(f"❌ Erro geral: {str(e)}")
         return None
 # FUNÇÃO PARA GERENCIAR A BASE DE DADOS
 def exibir_gerenciador_base_dados():
