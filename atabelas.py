@@ -192,7 +192,7 @@ def processar_alm_completo(df_alm):
                 valor_sugerido = float(row.iloc[4]) if pd.notna(row.iloc[4]) else 0
                 
                 # Coluna G (índice 6) - Peso sugerido
-                peso_sugerido = float(row.iloc[6]) if pd.notna(row.iloc[6]) else 0
+                peso_sugerido = float(row.iloc[7]) if pd.notna(row.iloc[7]) else 0
                 
                 if "NTN-B" in ativo:
                     # Extrair ano do vencimento para NTN-B
@@ -857,7 +857,7 @@ if uploaded_file_posicoes is not None and uploaded_file_alm is not None:
                 st.write("🔍 **DEBUG - Amostras das colunas importantes:**")
                 st.write("Coluna A (Ativo):", df_alm.iloc[1:6, 0].tolist())
                 st.write("Coluna E (Valor):", df_alm.iloc[1:6, 4].tolist()) 
-                st.write("Coluna G (Peso):", df_alm.iloc[1:6, 6].tolist())
+                st.write("Coluna G (Peso):", df_alm.iloc[1:6, 7].tolist())
             else:
                 st.error("❌ Arquivo ALM tem poucas colunas!")
         
