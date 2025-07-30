@@ -846,7 +846,7 @@ if uploaded_file_posicoes is not None and uploaded_file_alm is not None:
             st.stop()
         
         st.success("✅ Arquivos carregados com sucesso!")
-             if df_alm is not None:
+        if df_alm is not None:
             st.write("🔍 **DEBUG - Primeiras 10 linhas do arquivo ALM:**")
             st.dataframe(df_alm.head(10))
             
@@ -875,9 +875,9 @@ if uploaded_file_posicoes is not None and uploaded_file_alm is not None:
         with st.spinner("🔄 Processando sugestões ALM com base de dados..."):
             alm_ntnb, alm_fundos = processar_alm_completo(df_alm)
             # DEBUG - Resultado do processamento
-st.write("🔍 **DEBUG - Resultado processamento ALM:**")
-st.write("ALM NTN-B:", dict(alm_ntnb))
-st.write("ALM Fundos:", dict(alm_fundos))
+            st.write("🔍 **DEBUG - Resultado processamento ALM:**")
+            st.write("ALM NTN-B:", dict(alm_ntnb))
+            st.write("ALM Fundos:", dict(alm_fundos))
         
         # Consolidar dados NTN-B
         with st.spinner("🔄 Consolidando dados NTN-B..."):
