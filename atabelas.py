@@ -176,7 +176,7 @@ def processar_ntnb(df):
     
 
 def processar_alm_completo(df_alm):
-    """Processa arquivo ALM separando NTN-B e outros fundos"""
+    """Processa arquivo ALM separando NTN-B e outros fundos - CORRIGIDO"""
     try:
         alm_ntnb = defaultdict(lambda: {'valor': 0, 'peso': 0})
         alm_fundos = defaultdict(lambda: defaultdict(lambda: {'valor': 0, 'peso': 0}))
@@ -188,14 +188,26 @@ def processar_alm_completo(df_alm):
                 # Coluna A (índice 0) - Nome do ativo
                 ativo = str(row.iloc[0]) if pd.notna(row.iloc[0]) else ""
                 
-                # Coluna E (índice 4) - Valor sugerido
-                valor_sugerido = float(row.iloc[4]) if pd.notna(row.iloc[4]) else 0
+                # Coluna E (índice 4) - Valor sugerido - CORRIGIR FORMATO
+                valor_str = str(row.iloc[4]) if pd.notna(row.iloc[4]) else "0"
+                # Remover pontos e substituir vírgula por ponto
+                valor_str = valor_str.replace(".", "").replace(",", ".")
+                try:
+                    valor_sugerido = float(valor_str)
+                except:
+                    valor_sugerido = 0
                 
-                # Coluna H (índice 7) - Peso sugerido
-                peso_sugerido = float(row.iloc[7]) if pd.notna(row.iloc[7]) else 0
+                # Coluna H (índice 7) - Peso sugerido - CORRIGIR FORMATO
+                peso_str = str(row.iloc[7]) if pd.notna(row.iloc[7]) else "0"
+                # Substituir vírgula por ponto
+                peso_str = peso_str.replace(",", ".")
+                try:
+                    peso_sugerido = float(peso_str)
+                except:
+                    peso_sugerido = 0
                 
                 if "NTN-B" in ativo:
-                    # Extrair ano do vencimento para NTN-B
+                    # NOVO REGEX: Extrair ano (incluindo formato com barra)
                     match = re.search(r'NTN-B\s+(\d{4})', ativo)
                     if match:
                         ano = match.group(1)
@@ -211,7 +223,8 @@ def processar_alm_completo(df_alm):
                     alm_fundos[indexador][ativo]['valor'] += valor_sugerido
                     alm_fundos[indexador][ativo]['peso'] += peso_sugerido
                     
-            except:
+            except Exception as e:
+                st.warning(f"Erro ao processar linha {idx}: {str(e)}")
                 continue
         
         return dict(alm_ntnb), dict(alm_fundos)
