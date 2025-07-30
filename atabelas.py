@@ -687,74 +687,87 @@ def formatar_excel_tabelas_alm(df_ntnb, dados_fundos_por_indexador, usar_autofit
     return output
 
 def ler_arquivo_excel(uploaded_file):
-    """Função ultra-robusta para Streamlit Cloud"""
+    """Função otimizada para Streamlit Cloud - ignora estilos problemáticos"""
     try:
         uploaded_file.seek(0)
         st.info(f"🔄 Processando: {uploaded_file.name}")
         
-        # MÉTODO 1: Tentar com configurações mais tolerantes
-        try:
-            df = pd.read_excel(
-                uploaded_file, 
-                header=None, 
-                engine='openpyxl',
-                keep_default_na=False,  # Não converter valores em NaN
-                na_values=[],           # Lista vazia de valores NaN
-                dtype=str               # Forçar tudo como string
-            )
-            return df
-        except Exception as e1:
-            st.warning(f"Método 1 falhou: {str(e1)[:50]}...")
-            uploaded_file.seek(0)
-        
-        # MÉTODO 2: Usar openpyxl diretamente
+        # MÉTODO ESPECÍFICO PARA STREAMLIT CLOUD
         try:
             from openpyxl import load_workbook
+            from openpyxl.reader.excel import load_workbook as load_wb_reader
+            import warnings
             
-            # Carregar workbook com configurações mais tolerantes
+            # Suprimir warnings de estilo
+            warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
+            
+            # Tentar com configurações ultra-seguras
             workbook = load_workbook(
                 uploaded_file,
                 read_only=True,         # Modo somente leitura
-                keep_vba=False,         # Ignorar VBA
+                keep_vba=False,         # Sem VBA
                 data_only=True,         # Apenas dados (sem fórmulas)
-                keep_links=False        # Ignorar links externos
+                keep_links=False        # Sem links
             )
             
-            # Pegar a primeira planilha
             worksheet = workbook.active
             
-            # Extrair dados como lista de listas
+            # Buscar área com dados (evitar células vazias)
+            max_row = worksheet.max_row
+            max_col = worksheet.max_column
+            
+            st.info(f"📊 Área detectada: {max_row} linhas x {max_col} colunas")
+            
+            # Extrair dados célula por célula (mais seguro)
             data = []
-            for row in worksheet.iter_rows(values_only=True):
-                # Converter None para string vazia
-                clean_row = [str(cell) if cell is not None else "" for cell in row]
-                data.append(clean_row)
+            for row_num in range(1, max_row + 1):
+                row_data = []
+                for col_num in range(1, max_col + 1):
+                    try:
+                        cell = worksheet.cell(row=row_num, column=col_num)
+                        # Apenas o valor, ignorando completamente formatação
+                        value = cell.value
+                        if value is None:
+                            row_data.append("")
+                        else:
+                            row_data.append(str(value).strip())
+                    except:
+                        row_data.append("")
+                data.append(row_data)
             
             workbook.close()
             
-            # Converter para DataFrame
-            df = pd.DataFrame(data)
+            # Filtrar linhas completamente vazias
+            data_filtrada = []
+            for row in data:
+                if any(cell.strip() for cell in row if cell):
+                    data_filtrada.append(row)
+            
+            if not data_filtrada:
+                st.error("❌ Nenhum dado encontrado no arquivo")
+                return None
+            
+            df = pd.DataFrame(data_filtrada)
+            st.success(f"✅ {len(df)} linhas x {len(df.columns)} colunas processadas")
+            
             return df
             
-        except Exception as e2:
-            st.warning(f"Método 2 falhou: {str(e2)[:50]}...")
-            uploaded_file.seek(0)
-        
-        # MÉTODO 3: Fallback com pandas puro
-        try:
-            df = pd.read_excel(uploaded_file, header=None, engine='openpyxl')
-            return df
-        except Exception as e3:
-            st.warning(f"Método 3 falhou: {str(e3)[:50]}...")
-        
-        # Se todos falharam
-        st.error("❌ Não foi possível ler o arquivo Excel")
-        st.error("💡 Sugestões:")
-        st.error("   • Abra o arquivo no Excel e salve como nova cópia")
-        st.error("   • Remova formatações complexas, gráficos ou macros")
-        st.error("   • Tente salvar como .xlsx (não .xls)")
-        
-        return None
+        except Exception as e:
+            st.error(f"❌ Erro openpyxl: {str(e)}")
+            
+            # FALLBACK: Tentar pandas direto ignorando erros
+            try:
+                uploaded_file.seek(0)
+                df = pd.read_excel(
+                    uploaded_file, 
+                    header=None, 
+                    engine='openpyxl'
+                )
+                st.success(f"✅ Fallback funcionou: {len(df)} linhas")
+                return df
+            except Exception as e2:
+                st.error(f"❌ Fallback também falhou: {str(e2)}")
+                return None
         
     except Exception as e:
         st.error(f"❌ Erro geral: {str(e)}")
