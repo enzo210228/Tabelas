@@ -845,8 +845,8 @@ if uploaded_file_posicoes is not None and uploaded_file_alm is not None:
             st.error("Erro ao ler os arquivos. Verifique se estão no formato correto.")
             st.stop()
         
-        st.success("✅ Arquivos carregados com sucesso!")
-         if df_alm is not None:
+         st.success("✅ Arquivos carregados com sucesso!")
+             if df_alm is not None:
             st.write("🔍 **DEBUG - Primeiras 10 linhas do arquivo ALM:**")
             st.dataframe(df_alm.head(10))
             
