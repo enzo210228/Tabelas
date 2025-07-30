@@ -20,6 +20,8 @@ BASE_DADOS_ALM = {
     "RPPS - Carteira Fundo Crédito Privado - CDI": "CDI",
     "RPPS - Carteira Fundos Renda Fixa - CDI": "CDI",
     "RPPS - FIDC": "CDI",
+    "RPPS - Carteira 95% do CDI ": "CDI",  # Com espaço no final
+    " RPPS - Carteira 95% do CDI": "CDI",  # Com espaço no início
     
     # IMA-B
     "RPPS - Carteira Fundo Crédito Privado - IMA-B 5": "IMA-B",
