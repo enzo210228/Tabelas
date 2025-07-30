@@ -846,6 +846,22 @@ if uploaded_file_posicoes is not None and uploaded_file_alm is not None:
             st.stop()
         
         st.success("✅ Arquivos carregados com sucesso!")
+        # DEBUG TEMPORÁRIO - REMOVER DEPOIS
+if df_alm is not None:
+    st.write("🔍 **DEBUG - Primeiras 10 linhas do arquivo ALM:**")
+    st.dataframe(df_alm.head(10))
+    
+    st.write("🔍 **DEBUG - Estrutura do arquivo ALM:**")
+    st.write(f"Linhas: {len(df_alm)}, Colunas: {len(df_alm.columns)}")
+    
+    # Verificar colunas específicas que o código espera
+    if len(df_alm.columns) > 6:
+        st.write("🔍 **DEBUG - Amostras das colunas importantes:**")
+        st.write("Coluna A (Ativo):", df_alm.iloc[1:6, 0].tolist())
+        st.write("Coluna E (Valor):", df_alm.iloc[1:6, 4].tolist()) 
+        st.write("Coluna G (Peso):", df_alm.iloc[1:6, 6].tolist())
+    else:
+        st.error("❌ Arquivo ALM tem poucas colunas!")
         
         # Processar NTN-B
         with st.spinner("🔄 Processando dados NTN-B..."):
@@ -860,6 +876,10 @@ if uploaded_file_posicoes is not None and uploaded_file_alm is not None:
         # Processar ALM com base de dados
         with st.spinner("🔄 Processando sugestões ALM com base de dados..."):
             alm_ntnb, alm_fundos = processar_alm_completo(df_alm)
+            # DEBUG - Resultado do processamento
+st.write("🔍 **DEBUG - Resultado processamento ALM:**")
+st.write("ALM NTN-B:", dict(alm_ntnb))
+st.write("ALM Fundos:", dict(alm_fundos))
         
         # Consolidar dados NTN-B
         with st.spinner("🔄 Consolidando dados NTN-B..."):
